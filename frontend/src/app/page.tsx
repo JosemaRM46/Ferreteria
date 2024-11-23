@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+
 
 
 // Componente Slide de Imágenes

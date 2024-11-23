@@ -21,6 +21,10 @@ connection.connect(err => {
   console.log('Connected to MySQL');
 });
 
+app.get('/', (req, res) => {
+  res.send('Conexión exitosa');
+});
+
 app.get('/persona', (req, res) => {
   connection.query('SELECT * FROM persona', (err, results) => {
     if (err) {

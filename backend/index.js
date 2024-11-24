@@ -10,7 +10,8 @@ const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'ferreteria'
+  database: 'ferreteria',
+  port: 3306
 });
 
 connection.connect(err => {
@@ -26,7 +27,27 @@ app.get('/', (req, res) => {
 });
 
 app.get('/persona', (req, res) => {
-  connection.query('SELECT * FROM persona', (err, results) => {
+  connection.query('SELECT pNombre FROM persona', (err, results) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
+    res.json(results);
+  });
+});
+
+app.get('/categoria', (req, res) => {
+  connection.query('SELECT idCategoria, nombre FROM categoria', (err, results) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
+    res.json(results);
+  });
+});
+
+app.get('/producto', (req, res) => {
+  connection.query('SELECT * FROM producto c', (err, results) => {
     if (err) {
       res.status(500).send(err);
       return;

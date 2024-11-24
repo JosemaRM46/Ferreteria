@@ -1,57 +1,69 @@
 'use client';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
+// Definir la interfaz para el tipo de categoría
+interface Category {
+  idCategoria: number;
+  nombre: string;
+}
 
+export default function HomePage() {
+  const [categories, setCategories] = useState<Category[]>([]);
 
-// Componente Slide de Imágenes
-function ImageSlider() {
+  useEffect(() => {
+    axios.get('http://localhost:3001/categoria')
+      .then(response => {
+        setCategories(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching categories:', error);
+      });
+  }, []);
+
   return (
-    <div style={{ justifyContent:'center',display: 'flex', overflowX: 'scroll', gap: '1rem', padding: '1rem' }}>
-      <img src="https://res.cloudinary.com/dybrsccg2/image/upload/v1732324629/Screenshot_2024-11-10_at_2.02.20_srlgxa.png" alt="Slide 1" style={{ width: '180px', height: '180px' }} />
-      <img src="/images/logo.png" alt="Slide 2" style={{ width: '180px', height: 'auto' }} />
-      <img src="/images/logo.png" alt="Slide 3" style={{ width: '180px', height: 'auto' }} />
+    <div>
+      <Navbar />
+      <div style={{ padding: '2rem' }}>
+        <Link href="/departamentos" passHref>
+          <button style={{ marginBottom: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            Departamentos
+          </button>
+        </Link>
+        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Categorías</h1>
+        <CategoryGrid />
+      </div>
+      <Footer />
     </div>
   );
 }
 
 // Componente Cuadrícula de Categorías
 function CategoryGrid() {
-  const categories = [
-    { name: 'Herramientas', path: '/departamentos' },
-    { name: 'Pinturas', path: '/pinturas' },
-    { name: 'Materiales de Construcción', path: '/materiales' },
-    { name: 'Jardinería', path: '/jardineria' }
-  ];
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:3001/categoria')
+      .then(response => {
+        setCategories(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching categories:', error);
+      });
+  }, []);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', padding: '1rem' }}>
-      {categories.map(category => (
-        <div key={category.name} style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center' }}>
-          <h2>{category.name}</h2>
-          <Link href={category.path} legacyBehavior>
-            <a style={{ display: 'inline-block', marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', textDecoration: 'none', borderRadius: '4px' }}>
-              Ver más
-            </a>
-          </Link>
-        </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
+      {categories.map((category) => (
+        <Link key={category.idCategoria} href={`/departamentos/${category.idCategoria}`} passHref>
+          <div style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', cursor: 'pointer' }}>
+            <h2>{category.nombre}</h2>
+          </div>
+        </Link>
       ))}
-    </div>
-  );
-}
-
-// Componente Footer
-
-
-// Página Principal
-export default function Home() {
-  return (
-    <div>
-      <Navbar />
-      <ImageSlider />
-      <CategoryGrid />
-      <Footer />
     </div>
   );
 }

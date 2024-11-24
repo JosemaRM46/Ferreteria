@@ -61,6 +61,7 @@ function CategoryGrid() {
         <Link key={category.idCategoria} href={`/departamentos/${category.idCategoria}`} passHref>
           <div style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', cursor: 'pointer' }}>
             <h2>{category.nombre}</h2>
+            <h2>{category.idCategoria}</h2>
           </div>
         </Link>
       ))}

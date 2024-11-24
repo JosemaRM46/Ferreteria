@@ -1,18 +1,33 @@
 'use client';
-
+import { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
-const user = {
-  firstName: 'Juan',
-  lastName: 'Pérez',
-  email: 'juan.perez@example.com',
-  phone: '+1234567890',
-  country: 'Honduras',
-  department: 'Comayagua'
-};
+interface UserProfile {
+  pNombre: string;
+  sNombre: string;
+  pApellido: string;
+  sApellido: string;
+  direccion: string;
+}
 
 export default function ProfilePage() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const idPersona = localStorage.getItem('idPersona');
+    if (idPersona) {
+      fetch(`http://localhost:3001/perfil/${idPersona}`)
+        .then(response => response.json())
+        .then(data => setUser(data))
+        .catch(error => console.error('Error al obtener los datos del perfil:', error));
+    }
+  }, []);
+
+  if (!user) {
+    return <p>Cargando perfil...</p>;
+  }
+
   return (
     <div>
       <Navbar />
@@ -20,22 +35,19 @@ export default function ProfilePage() {
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Perfil</h1>
         <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '8px' }}>
           <div style={{ marginBottom: '1rem' }}>
-            <strong>Nombres:</strong> <span>{user.firstName}</span>
+            <strong>Primer Nombre:</strong> <span>{user.pNombre}</span>
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <strong>Apellidos:</strong> <span>{user.lastName}</span>
+            <strong>Segundo Nombre:</strong> <span>{user.sNombre}</span>
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <strong>Correo:</strong> <span>{user.email}</span>
+            <strong>Primer Apellido:</strong> <span>{user.pApellido}</span>
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <strong>Teléfono:</strong> <span>{user.phone}</span>
+            <strong>Segundo Apellido:</strong> <span>{user.sApellido}</span>
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <strong>País:</strong> <span>{user.country}</span>
-          </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <strong>Departamento:</strong> <span>{user.department}</span>
+            <strong>Dirección:</strong> <span>{user.direccion}</span>
           </div>
         </div>
       </div>

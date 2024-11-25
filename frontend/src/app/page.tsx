@@ -13,16 +13,30 @@ interface Category {
 
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isJefe, setIsJefe] = useState(false);
 
   useEffect(() => {
-    axios.get('http://localhost:3001/categoria')
-      .then(response => {
-        setCategories(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching categories:', error);
-      });
+    const idPersona = localStorage.getItem('idPersona');
+    const jefeStatus = localStorage.getItem('isJefe') === 'true';
+    if (!idPersona) {
+      window.location.href = '/login';
+    } else {
+      setIsAuthenticated(true);
+      setIsJefe(jefeStatus);
+      axios.get('http://localhost:3001/categoria')
+        .then(response => {
+          setCategories(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching categories:', error);
+        });
+    }
   }, []);
+
+  if (!isAuthenticated) {
+    return <p>Redirigiendo a la página de inicio de sesión...</p>;
+  }
 
   return (
     <div>
@@ -35,6 +49,17 @@ export default function HomePage() {
         </Link>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Categorías</h1>
         <CategoryGrid />
+        {isJefe && (
+          <div>
+            <h2>Opciones de Administrador</h2>
+            <Link href="/admin/dashboard" passHref>
+              <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                Panel de Administración
+              </button>
+            </Link>
+            {/* Aquí puedes agregar más opciones para los jefes */}
+          </div>
+        )}
       </div>
       <Footer />
     </div>

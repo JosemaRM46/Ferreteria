@@ -37,21 +37,64 @@ export default function LoginPage() {
     }
   };
 
+  // Función para redirigir a la página de registro
+  const handleRegisterRedirect = () => {
+    window.location.href = '/Registro'; 
+  };
+
   return (
-    <div>
-      <h1>Inicio de Sesión</h1>
-      <form onSubmit={handleLogin}>
-        <div>
-          <label>Correo:</label>
-          <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
-        </div>
-        <div>
-          <label>Contraseña:</label>
-          <input type="password" value={contraseña} onChange={(e) => setContraseña(e.target.value)} required />
-        </div>
-        <button type="submit">Iniciar Sesión</button>
-      </form>
-      {loading && loginSuccess && <p>Redirigiendo...</p>} {/* Mostrar el loader solo si el login es exitoso */}
+    <div
+      className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center"
+      style={{ backgroundImage: 'url(/images/Fondo.jpg)' }}
+    >
+      <h1 className="text-5xl font-extrabold text-gray-800 mb-20 text-center">
+        Tu ferre de confianza
+      </h1>
+      
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4 text-center">Inicio de Sesión</h2>
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium">Correo:</label>
+            <input
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium">Contraseña:</label>
+            <input
+              type="password"
+              value={contraseña}
+              onChange={(e) => setContraseña(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-black text-white py-2 rounded-lg hover:bg-black"
+          >
+            Iniciar Sesión
+          </button>
+        </form>
+        
+        {/* Botón para redirigir a la página de registro */}
+        <p className="text-center text-sm text-gray-600 mt-4">
+          ¿No tienes cuenta?{' '}
+          <button
+            onClick={handleRegisterRedirect}
+            className="text-blue-500 hover:underline"
+          >
+            Crear cuenta
+          </button>
+        </p>
+
+        {loading && <p className="text-center text-blue-500 mt-3">Redirigiendo...</p>}
+      </div>
     </div>
   );
 }

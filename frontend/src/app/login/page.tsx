@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [correo, setCorreo] = useState('');
@@ -21,8 +22,9 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Guardar el idPersona en localStorage
+        // Guardar el idPersona y el estado de jefe en localStorage
         localStorage.setItem('idPersona', data.idPersona);
+        localStorage.setItem('isJefe', data.isJefe ? 'true' : 'false');
         // Indicar que el inicio de sesión fue exitoso
         setLoginSuccess(true);
         // Redirigir a la página principal
@@ -52,6 +54,7 @@ export default function LoginPage() {
         <button type="submit">Iniciar Sesión</button>
       </form>
       {loading && loginSuccess && <p>Redirigiendo...</p>} {/* Mostrar el loader solo si el login es exitoso */}
+      <p>¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link></p>
     </div>
   );
 }

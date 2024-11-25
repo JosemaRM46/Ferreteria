@@ -24,6 +24,11 @@ export default function ProfilePage() {
     }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('idPersona');
+    window.location.href = '/login';
+  };
+
   if (!user) {
     return <p>Cargando perfil...</p>;
   }
@@ -50,6 +55,9 @@ export default function ProfilePage() {
             <strong>Dirección:</strong> <span>{user.direccion}</span>
           </div>
         </div>
+        <button onClick={handleLogout} style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+          Cerrar Sesión
+        </button>
       </div>
       <Footer />
     </div>

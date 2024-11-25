@@ -59,17 +59,21 @@ app.get('/producto', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { Correo, Contraseña } = req.body;
-  console.log('Datos recibidos:', Correo, Contraseña); // Log para depuración
-  const query = 'SELECT * FROM iniciosesion WHERE Correo = ? AND Contraseña = ?';
+  const query = `
+    SELECT i.idPersona, 
+           (SELECT COUNT(*) FROM Empleado e WHERE e.idPersona = i.idPersona AND e.idJefe IS NULL) AS isJefe
+    FROM iniciosesion i
+    WHERE i.Correo = ? AND i.Contraseña = ?;
+  `;
   connection.query(query, [Correo, Contraseña], (err, results) => {
     if (err) {
-      console.error('Error en la consulta:', err); // Log para depuración
+      console.error('Error en la consulta:', err);
       res.status(500).send('Error en el servidor');
       return;
     }
-    console.log('Resultados de la consulta:', results); // Log para depuración
     if (results.length > 0) {
-      res.json({ idPersona: results[0].idPersona });
+      const { idPersona, isJefe } = results[0];
+      res.json({ idPersona, isJefe: isJefe > 0 });
     } else {
       res.status(401).send('Correo o contraseña incorrectos');
     }
@@ -91,6 +95,36 @@ app.get('/perfil/:idPersona', (req, res) => {
     } else {
       res.status(404).send('Perfil no encontrado');
     }
+  });
+});
+
+
+app.post('/registro', (req, res) => {
+  const { pNombre, sNombre, pApellido, sApellido, direccion, genero, correo, contraseña } = req.body;
+
+  if (!pNombre || !pApellido) {
+    return res.status(400).send('El primer nombre y el primer apellido son obligatorios');
+  }
+
+  const personaQuery = 'INSERT INTO persona (pNombre, sNombre, pApellido, sApellido, direccion, genero) VALUES (?, ?, ?, ?, ?, ?)';
+  connection.query(personaQuery, [pNombre, sNombre, pApellido, sApellido, direccion, genero], (err, results) => {
+    if (err) {
+      console.error('Error en la consulta:', err);
+      res.status(500).send('Error en el servidor');
+      return;
+    }
+
+    const idPersona = results.insertId;
+    const inicioSesionQuery = 'INSERT INTO iniciosesion (Correo, Contraseña, idPersona) VALUES (?, ?, ?)';
+    connection.query(inicioSesionQuery, [correo, contraseña, idPersona], (err, results) => {
+      if (err) {
+        console.error('Error en la consulta:', err);
+        res.status(500).send('Error en el servidor');
+        return;
+      }
+
+      res.status(201).send('Registro exitoso');
+    });
   });
 });
 

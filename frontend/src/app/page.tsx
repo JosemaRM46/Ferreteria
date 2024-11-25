@@ -41,7 +41,7 @@ export default function HomePage() {
   );
 }
 
-// Componente Cuadrícula de Categorías
+// Componente Cuadrícula de Categorías -p-
 function CategoryGrid() {
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -65,6 +65,6 @@ function CategoryGrid() {
           </div>
         </Link>
       ))}
-    </div>
+    </div>    
   );
 }

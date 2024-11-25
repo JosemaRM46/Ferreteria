@@ -20,7 +20,7 @@ connection.connect(err => {
     console.error('Error connecting to MySQL:', err);
     return;
   }
-  console.log('Connected to MySQL');
+  console.log('Connected to MySQL');  
 });
 
 app.get('/', (req, res) => {
@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/persona', (req, res) => {
-  connection.query('SELECT pNombre FROM persona', (err, results) => {
+  connection.query('SELECT * FROM persona', (err, results) => {
     if (err) {
       res.status(500).send(err);
       return;

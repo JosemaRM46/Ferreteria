@@ -48,9 +48,22 @@ app.get('/categoria', (req, res) => {
 });
 
 app.get('/producto', (req, res) => {
-  connection.query('SELECT * FROM producto c', (err, results) => {
+  connection.query('SELECT * FROM producto', (err, results) => {
     if (err) {
       res.status(500).send(err);
+      return;
+    }
+    res.json(results);
+  });
+});
+
+app.get('/productos/departamento/:idCategoria', (req, res) => {
+  const { idCategoria } = req.params;
+  const query = 'SELECT * FROM producto WHERE idCategoria = ?';
+  connection.query(query, [idCategoria], (err, results) => {
+    if (err) {
+      console.error('Error fetching products by department:', err);
+      res.status(500).send('Error fetching products by department');
       return;
     }
     res.json(results);
@@ -80,7 +93,6 @@ app.post('/login', (req, res) => {
   });
 });
 
-
 app.get('/perfil/:idPersona', (req, res) => {
   const { idPersona } = req.params;
   const query = 'SELECT pNombre, sNombre, pApellido, sApellido, direccion FROM persona WHERE idPersona = ?';
@@ -97,7 +109,6 @@ app.get('/perfil/:idPersona', (req, res) => {
     }
   });
 });
-
 
 app.post('/registro', (req, res) => {
   const { pNombre, sNombre, pApellido, sApellido, direccion, genero, correo, contraseña } = req.body;
@@ -125,6 +136,23 @@ app.post('/registro', (req, res) => {
 
       res.status(201).send('Registro exitoso');
     });
+  });
+});
+
+app.get('/producto/:idProducto', (req, res) => {
+  const { idProducto } = req.params;
+  const query = 'SELECT * FROM producto WHERE idProducto = ?';
+  connection.query(query, [idProducto], (err, results) => {
+    if (err) {
+      console.error('Error fetching product:', err);
+      res.status(500).send('Error fetching product');
+      return;
+    }
+    if (results.length > 0) {
+      res.json(results[0]);
+    } else {
+      res.status(404).send('Producto no encontrado');
+    }
   });
 });
 

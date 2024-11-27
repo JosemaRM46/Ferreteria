@@ -48,7 +48,7 @@ export default function HomePage() {
           </button>
         </Link>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Categorías</h1>
-        <CategoryGrid />
+        <CategoryGrid categories={categories} />
         {isJefe && (
           <div>
             <h2>Opciones de Administrador</h2>
@@ -67,19 +67,7 @@ export default function HomePage() {
 }
 
 // Componente Cuadrícula de Categorías
-function CategoryGrid() {
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  useEffect(() => {
-    axios.get('http://localhost:3001/categoria')
-      .then(response => {
-        setCategories(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching categories:', error);
-      });
-  }, []);
-
+function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
       {categories.map((category) => (

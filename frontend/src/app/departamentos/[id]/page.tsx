@@ -26,25 +26,24 @@ export default function DepartmentPage() {
 
   useEffect(() => {
     if (id) {
-      // Obtener los productos del departamento
-      axios.get('http://localhost:3001/productos')
-        .then(response => {
-          const departmentProducts = response.data.filter((product: Product) => product.idCategoria === Number(id));
-          setProducts(departmentProducts);
-        })
-        .catch(error => {
-          console.error('Error fetching products:', error);
-        });
+      // Obtener los productos y el nombre del departamento
+      const fetchDepartmentData = async () => {
+        try {
+          const [productsResponse, categoriesResponse] = await Promise.all([
+            axios.get(`http://localhost:3001/productos/departamento/${id}`),
+            axios.get('http://localhost:3001/categoria')
+          ]);
 
-      // Obtener el nombre del departamento
-      axios.get('http://localhost:3001/categoria')
-        .then(response => {
-          const department = response.data.find((dept: { idCategoria: number }) => dept.idCategoria === Number(id));
+          setProducts(productsResponse.data);
+
+          const department = categoriesResponse.data.find((dept: { idCategoria: number }) => dept.idCategoria === Number(id));
           setDepartmentName(department?.nombre || 'Departamento');
-        })
-        .catch(error => {
-          console.error('Error fetching department name:', error);
-        });
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      };
+
+      fetchDepartmentData();
     }
   }, [id]);
 

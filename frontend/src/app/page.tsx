@@ -4,6 +4,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Slider from '../components/Slider';
 
 // Definir la interfaz para el tipo de categoría
 interface Category {
@@ -41,6 +42,7 @@ export default function HomePage() {
   return (
     <div>
       <Navbar />
+      <Slider />
       <div style={{ padding: '2rem' }}>
         <Link href="/departamentos" passHref>
           <button style={{ marginBottom: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>

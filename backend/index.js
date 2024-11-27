@@ -156,6 +156,23 @@ app.get('/producto/:idProducto', (req, res) => {
   });
 });
 
+app.get('/buscar', (req, res) => {
+  const { query } = req.query;
+  const searchQuery = `
+    SELECT * FROM producto 
+    WHERE nombre LIKE ?
+  `;
+  const searchValue = `%${query}%`;
+  connection.query(searchQuery, [searchValue], (err, results) => {
+    if (err) {
+      console.error('Error fetching search results:', err);
+      res.status(500).send('Error fetching search results');
+      return;
+    }
+    res.json(results);
+  });
+});
+
 app.listen(port, () => {
   console.log(`Backend server running at http://localhost:${port}`);
 });

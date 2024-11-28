@@ -47,6 +47,40 @@ export default function DepartmentPage() {
     }
   }, [id]);
 
+  // Función para agregar al carrito
+  const agregarAlCarrito = async (idProducto: number) => {
+    const idPersona = localStorage.getItem('idPersona'); // Obtener idPersona desde localStorage
+    const cantidad = 1; // Puedes permitir que el usuario elija la cantidad
+  
+    if (!idPersona) {
+      alert('No estás logueado');
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:3001/carrito/agregar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idPersona,
+          idProducto,
+          cantidad,
+        }),
+      });
+  
+      if (response.ok) {
+        alert('Producto agregado al carrito');
+      } else {
+        alert('Error al agregar producto al carrito');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Hubo un error al agregar el producto al carrito');
+    }
+  };
+
   return (
     <div>
       <Navbar />
@@ -54,13 +88,16 @@ export default function DepartmentPage() {
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Productos en el Departamento {departmentName}</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
           {products.map((product) => (
-            <Link key={product.idProducto} href={`/departamentos/${id}/productos/${product.idProducto}`} passHref>
-              <div style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img src="/images/logo.png" alt={product.nombre} style={{ width: '100px', height: '100px', marginBottom: '1rem' }} />
-                <h2>{product.nombre}</h2>
-                <p>{product.precioVenta}</p>
-              </div>
-            </Link>
+            <div key={product.idProducto} style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <img src="/images/logo.png" alt={product.nombre} style={{ width: '100px', height: '100px', marginBottom: '1rem' }} />
+              <h2>{product.nombre}</h2>
+              <p>{product.precioVenta}</p>
+              <button 
+                onClick={() => agregarAlCarrito(product.idProducto)} 
+                style={{ backgroundColor: '#4CAF50', color: 'white', padding: '10px', borderRadius: '5px', cursor: 'pointer', marginTop: '10px' }}>
+                Agregar al carrito
+              </button>
+            </div>
           ))}
         </div>
       </div>

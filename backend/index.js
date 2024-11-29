@@ -227,7 +227,7 @@ app.get('/carrito/:idCliente', (req, res) => {
         p.nombre, 
         p.precioVenta, 
         cp.cantidad, 
-        cp.Total
+        (cp.cantidad * p.precioVenta) AS Total
       FROM 
         Producto p
       INNER JOIN 
@@ -308,10 +308,11 @@ app.post('/carrito/agregar', (req, res) => {
       function agregarProductoAlCarrito(idCarrito) {
         const query = `
           INSERT INTO Carrito_has_Producto (idCarrito, idProducto, cantidad, Total)
-          VALUES (?, ?, ?, (SELECT precioVenta FROM Producto WHERE idProducto = ?) * ?)
-          ON DUPLICATE KEY UPDATE 
-            cantidad = cantidad + VALUES(cantidad),
-            Total = (SELECT precioVenta FROM Producto WHERE idProducto = ?) * (cantidad + VALUES(cantidad));
+VALUES (?, ?, ?, (SELECT precioVenta FROM Producto WHERE idProducto = ?) * ?)
+ON DUPLICATE KEY UPDATE 
+    cantidad = cantidad + VALUES(cantidad),
+    Total = (SELECT precioVenta FROM Producto WHERE idProducto = ?) * (cantidad);
+
         `;
 
         connection.query(query, [idCarrito, idProducto, cantidad, idProducto, cantidad, idProducto], (err) => {

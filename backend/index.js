@@ -333,3 +333,175 @@ app.post('/carrito/agregar', (req, res) => {
 app.listen(port, () => {
   console.log(`Backend server running at http://localhost:${port}`);
 });
+
+
+/////////////////////////////////////////////////////////////////////
+////////// P A N T A L L A   A D M I N I S T R A D O R ///////////////
+/////////////////////////////////////////////////////////////////////
+
+// obtener el empleado del mes
+app.get('/EmpleadoDelMes', (req, res) => {
+  const query = `
+    SELECT 
+      CONCAT(p.pNombre, ' ', p.pApellido) AS Empleado, 
+      COUNT(en.idEntrega) AS CantidadEntregas,
+      e.fotografia Imagen
+    FROM entrega en
+    INNER JOIN empleado e ON e.idEmpleado = en.idEmpleado
+    INNER JOIN persona p ON p.idPersona = e.idPersona
+    INNER JOIN carrito_Entrega ce ON ce.idEntrega = en.idEntrega
+    WHERE MONTH(ce.FechaEntrega) = MONTH(CURDATE())
+    AND ce.estado='Entregado'
+    GROUP BY CONCAT(p.pNombre, ' ', p.pApellido), e.fotografia 
+    ORDER BY CantidadEntregas DESC
+    LIMIT 1;
+  `;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error ejecutando la consulta:", err);
+      res.status(500).json({ error: 'Error al obtener el empleado del mes' });
+      return;
+    }
+    if (results.length > 0) {
+      res.json(results[0]); // Retorna el primer resultado
+    } else {
+      res.json({ Empleado: 'Sin datos', CantidadEntregas: 0 });
+    }
+  });
+});
+
+//Obtener los productos proximos en agotar 
+app.get('/productosagotados', (req, res) => {
+  const query = `
+    SELECT p.nombre, cp.existencia 
+    FROM producto p
+    INNER JOIN producto_has_sucursal cp ON cp.idProducto = p.idProducto
+    WHERE cp.existencia <= 100 and cp.idSucursal = 1
+    ORDER BY cp.existencia DESC;
+  `;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error ejecutando la consulta:", err);
+      res.status(500).json({ error: 'Error al obtener los productos agotados' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+//Total Ventas los ultimos 3 meses
+app.get('/Ventas', (req, res) => {
+  const query = `
+    SELECT 
+      MONTHNAME(c.fecha) AS Mes, 
+      SUM(cp.cantidad) AS Ventas
+    FROM carrito c
+    INNER JOIN carrito_has_producto cp ON cp.idCarrito = c.idCarrito
+    WHERE c.fecha >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+      AND c.Estado = 'Pagado'
+    GROUP BY MONTHNAME(c.fecha);
+  `;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error ejecutando la consulta:", err);
+      res.status(500).json({ error: 'Error al obtener las ventas' });
+      return;
+    }
+    res.json({
+      meses: results.map(row => row.Mes),
+      ventas: results.map(row => row.Ventas),
+    });
+  });
+});
+
+/////////////////////////////////////////////////////////////////////
+////////// P A N T A L L A   I N V E N T A R I O ///////////////
+/////////////////////////////////////////////////////////////////////
+
+// Obtener todos los productos
+
+// Endpoint para obtener productos y su cantidad de stock
+app.get('/inventario', (req, res) => {
+  const { idsucursal } = req.query;  // Obtener el id de la sucursal desde el query string
+  if (!idsucursal) {
+    return res.status(400).json({ error: 'Falta el parámetro idsucursal' });
+  }
+
+  // Consulta SQL para obtener los productos con su cantidad de stock
+  const query = `
+    SELECT p.*, ps.existencia AS existencias
+    FROM producto p
+    LEFT JOIN producto_has_sucursal ps ON p.idProducto = ps.idProducto
+    where p.idSucursal = 1
+    
+  `;
+
+  // Ejecutar la consulta
+  db.query(query, [idsucursal], (err, results) => {
+    if (err) {
+      console.error('Error al obtener los productos: ', err);
+      return res.status(500).json({ error: 'Error en la consulta a la base de datos' });
+    }
+    res.json(results);  // Enviar los productos con su stock
+  });
+});
+
+// Agregar un nuevo producto
+app.post('/producto', (req, res) => {
+  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta } = req.body;
+
+  const query = `
+    INSERT INTO producto (nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  connection.query(query, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta], (err, results) => {
+    if (err) {
+      console.error('Error al agregar el producto:', err);
+      res.status(500).send('Error al agregar el producto');
+      return;
+    }
+    res.status(201).json({ message: 'Producto agregado con éxito', idProducto: results.insertId }); // Devuelve el ID del nuevo producto
+  });
+});
+
+// Editar un producto
+app.put('/producto/:idProducto', (req, res) => {
+  const { idProducto } = req.params;
+  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta } = req.body;
+
+  const query = `
+    UPDATE producto
+    SET nombre = ?, descripcion = ?, precioVenta = ?, precioCosto = ?, idCategoria = ?, idMarca = ?, Impuesto = ?, ruta = ?
+    WHERE idProducto = ?
+  `;
+
+  connection.query(query, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, idProducto], (err, results) => {
+    if (err) {
+      console.error('Error al editar el producto:', err);
+      res.status(500).send('Error al editar el producto');
+      return;
+    }
+    res.json({ message: 'Producto actualizado con éxito' });
+  });
+});
+
+
+// Eliminar un producto
+app.delete('/producto/:idProducto', (req, res) => {
+  const { idProducto } = req.params;
+
+  const query = 'DELETE FROM producto WHERE idProducto = ?';
+
+  connection.query(query, [idProducto], (err, results) => {
+    if (err) {
+      console.error('Error al eliminar el producto:', err);
+      res.status(500).send('Error al eliminar el producto');
+      return;
+    }
+    res.json({ message: 'Producto eliminado con éxito' });
+  });
+});

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-
+import Navbar from '../../components/Navbar2';
 import Footer from "../../components/Footer";
 
 export default function RegisterPage() {
@@ -18,7 +18,7 @@ export default function RegisterPage() {
     idProducto: undefined,
   });
   const [paginaActual, setPaginaActual] = useState(1); // Página actual
-  const productosPorPagina = 30; // Cantidad de productos por página
+  const productosPorPagina = 15; // Cantidad de productos por página
   const [mensaje, setMensaje] = useState(""); // Mensaje de éxito
   const [productoAEliminar, setProductoAEliminar] = useState<any>(null); // Producto a eliminar
   const [busqueda, setBusqueda] = useState(""); // Estado de la búsqueda
@@ -94,7 +94,6 @@ export default function RegisterPage() {
     const productoEditar = productos.find((producto) => producto.idProducto === idProducto);
     setNuevoProducto(productoEditar || {});
     setShowForm(true); // Mostrar formulario en modo de edición
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Desplazar automáticamente hacia arriba
   };
 
   // Cancelar la edición o la creación de un nuevo producto
@@ -163,7 +162,9 @@ export default function RegisterPage() {
   };
 
   return (
+  
     <div className="flex flex-col min-h-screen bg-gray-50">
+      <Navbar />
       
       <div className="flex flex-col items-center justify-start p-8 flex-grow">
         <h1 className="text-3xl font-extrabold text-gray-800 mb-8">Gestión del Inventario</h1>

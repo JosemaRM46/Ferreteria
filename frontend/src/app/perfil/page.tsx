@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '../../components/Navbar';
+import Navbar from '../../components/Navbar2';
 import Footer from '../../components/Footer';
 
 interface UserProfile {

@@ -1,5 +1,5 @@
 'use client';
-import Navbar from '../../../components/Navbar';
+import Navbar from '../../../components/Navbar2';
 import Footer from '../../../components/Footer';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, LineElement, PointElement } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -90,23 +90,30 @@ export default function AdminDashboard() {
             <Line data={data} />
           </div>
 
-          {/* Alertas de productos agotados */}
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-700">Alerta de Productos en agotamiento</h3>
-            <ul className="list-disc list-inside text-gray-600">
-              {alertas.map((producto, index) => (
-                <li key={index}>
-                  {producto.nombre} ({producto.existencia} en stock)
-                </li>
-              ))}
-            </ul>
-            <button
-              className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
-              onClick={() => window.location.href = '/contacto-proveedor'}
-            >
-              Contactar Proveedor
-            </button>
-          </div>
+        {/* Alertas de productos agotados */}
+        <div className="bg-white shadow-lg rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-700">Alerta de Productos en Agotamiento</h3>
+          {alertas.length > 0 ? (
+            <>
+              <ul className="list-disc list-inside text-gray-600">
+                {alertas.map((producto, index) => (
+                  <li key={index}>
+                    {producto.nombre} ({producto.existencia} en stock)
+                  </li>
+                ))}
+              </ul>
+              <button
+                className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+                onClick={() => window.location.href = '/proveedor'}
+              >
+                Contactar Proveedor
+              </button>
+            </>
+          ) : (
+            <p className="text-green-600 font-medium">Todo está correcto, no hay productos en agotamiento.</p>
+          )}
+        </div>
+
 
           {/* Empleado del mes */}
           <div className="bg-white shadow-lg rounded-lg p-6">

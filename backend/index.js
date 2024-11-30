@@ -506,3 +506,18 @@ app.delete('/producto/:idProducto', (req, res) => {
     res.json({ message: 'Producto eliminado con éxito' });
   });
 });
+
+
+/////////////////////////////////////////////////////////////////////
+//////////     P A N T A L L A   P R O V E E D O R    ///////////////
+/////////////////////////////////////////////////////////////////////
+
+app.get('/proveedor', (req, res) => {
+  connection.query('SELECT idproveedor, nombre, correo, telefono, ruta FROM proveedor', (err, results) => {
+    if (err) {
+      res.status(500).send(err);
+      return;
+    }
+    res.json(results);
+  });
+});

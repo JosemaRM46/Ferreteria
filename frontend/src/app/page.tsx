@@ -10,6 +10,7 @@ import Slider from '../components/Slider';
 interface Category {
   idCategoria: number;
   nombre: string;
+  Ruta: string; 
 }
 
 export default function HomePage() {
@@ -40,26 +41,20 @@ export default function HomePage() {
   }
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
       <Slider />
-      <div style={{ padding: '2rem' }}>
-        <Link href="/departamentos" passHref>
-          <button style={{ marginBottom: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            Departamentos
-          </button>
-        </Link>
-        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Categorías</h1>
+      <div className="container mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6">Categorías</h1>
         <CategoryGrid categories={categories} />
         {isJefe && (
-          <div>
-            <h2>Opciones de Administrador</h2>
+          <div className="mt-8">
+            <h2 className="text-2xl font-semibold">Opciones de Administrador</h2>
             <Link href="/admin/dashboard" passHref>
-              <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+              <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
                 Panel de Administración
               </button>
             </Link>
-            {/* Aquí puedes agregar más opciones para los jefes */}
           </div>
         )}
       </div>
@@ -71,12 +66,23 @@ export default function HomePage() {
 // Componente Cuadrícula de Categorías
 function CategoryGrid({ categories }: { categories: Category[] }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
       {categories.map((category) => (
         <Link key={category.idCategoria} href={`/departamentos/${category.idCategoria}`} passHref>
-          <div style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', cursor: 'pointer' }}>
-            <h2>{category.nombre}</h2>
-            <h2>{category.idCategoria}</h2>
+          <div className="group relative bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer overflow-hidden">
+            {/* Imagen de categoría */}
+            <img
+              src={category.Ruta}
+              alt={category.nombre}
+              className="w-full h-48 object-cover"
+            />
+            {/* Texto de categoría */}
+            <div className="p-4 text-center">
+              <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition">
+                {category.nombre}
+              </h2>
+              <p className="text-sm text-gray-500">ID: {category.idCategoria}</p>
+            </div>
           </div>
         </Link>
       ))}

@@ -38,7 +38,7 @@ app.get('/persona', (req, res) => {
 });
 
 app.get('/categoria', (req, res) => {
-  connection.query('SELECT idCategoria, nombre FROM categoria', (err, results) => {
+  connection.query('SELECT idCategoria, nombre, Ruta FROM categoria', (err, results) => {
     if (err) {
       res.status(500).send(err);
       return;

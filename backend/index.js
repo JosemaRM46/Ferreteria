@@ -201,13 +201,15 @@ app.get('/cliente/:idPersona', (req, res) => {
 
 
 
+
+
 // Ruta para obtener el carrito por idCliente
 app.get('/carrito/:idCliente', (req, res) => {
   const { idCliente } = req.params;
 
   // Primero obtenemos el idCarrito relacionado con el idCliente
-  const queryCarrito = 'SELECT idCarrito FROM Carrito WHERE idCliente = ?';
-  
+  const queryCarrito = 'SELECT idCarrito, idTarjeta FROM Carrito WHERE idCliente = ?';
+
   connection.query(queryCarrito, [idCliente], (err, result) => {
     if (err) {
       console.error('Error al obtener el idCarrito:', err);
@@ -219,9 +221,10 @@ app.get('/carrito/:idCliente', (req, res) => {
     }
 
     const idCarrito = result[0].idCarrito;
+    const idTarjeta = result[0].idTarjeta;
 
     // Ahora obtenemos los productos en ese carrito
-    const query = `
+    const queryProductos = `
       SELECT 
         p.idProducto, 
         p.nombre, 
@@ -236,15 +239,51 @@ app.get('/carrito/:idCliente', (req, res) => {
         cp.idCarrito = ?;
     `;
 
-    connection.query(query, [idCarrito], (err, results) => {
+    connection.query(queryProductos, [idCarrito], (err, products) => {
       if (err) {
         console.error('Error al obtener los productos del carrito:', err);
         return res.status(500).send('Error en el servidor');
       }
-      res.json(results); // Retornamos los productos del carrito
+
+      // Calcular el total general del carrito
+      const totalGeneral = products.reduce((total, producto) => total + producto.Total, 0);
+
+      // Obtener detalles de la tarjeta asociada
+      const queryTarjeta = 'SELECT * FROM Tarjeta WHERE idTarjeta = ?';
+      connection.query(queryTarjeta, [idTarjeta], (err, tarjeta) => {
+        if (err) {
+          console.error('Error al obtener la tarjeta:', err);
+          return res.status(500).send('Error al obtener la tarjeta');
+        }
+
+        // Obtener detalles de la ubicación asociada
+        const queryUbicacion = `
+          SELECT ud.Detalles, p.Nombre AS Pais, d.Nombre AS Departamento
+          FROM Ubicacion_detalle ud
+          INNER JOIN Pais p ON p.idPais = ud.idPais
+          INNER JOIN Departamento d ON d.idDepartamento = ud.idDepartamento
+          WHERE ud.idCarrito = ?
+        `;
+        
+        connection.query(queryUbicacion, [idCarrito], (err, ubicacion) => {
+          if (err) {
+            console.error('Error al obtener la ubicación:', err);
+            return res.status(500).send('Error al obtener la ubicación');
+          }
+
+          // Devolver los productos, el total general, la tarjeta y la ubicación
+          res.json({
+            productos: products,
+            totalGeneral: totalGeneral,
+            tarjeta: tarjeta[0],  // Tarjeta asociada al carrito
+            ubicacion: ubicacion[0] // Detalles de la ubicación
+          });
+        });
+      });
     });
   });
 });
+
 
 
 
@@ -291,16 +330,20 @@ app.post('/carrito/agregar', (req, res) => {
 
       // Si no tiene carrito, crea uno
       if (!idCarrito) {
-        const queryCrearCarrito = 'INSERT INTO Carrito (idCliente) VALUES (?)';
+        const queryCrearCarrito = `
+            INSERT INTO Carrito (idCliente, idUbicacion, idSucursal, idTarjeta, Total, Estado)
+            VALUES (?, 1, 1, NULL, NULL, 'En espera')
+        `;
         connection.query(queryCrearCarrito, [idCliente], (err, result) => {
-          if (err) {
-            console.error('Error al crear el carrito:', err);
-            res.status(500).send('Error en el servidor');
-            return;
-          }
-          idCarrito = result.insertId;
-          agregarProductoAlCarrito(idCarrito);
+            if (err) {
+                console.error('Error al crear el carrito:', err);
+                res.status(500).send('Error en el servidor');
+                return;
+            }
+            idCarrito = result.insertId;
+            agregarProductoAlCarrito(idCarrito);
         });
+        
       } else {
         agregarProductoAlCarrito(idCarrito);
       }
@@ -308,11 +351,10 @@ app.post('/carrito/agregar', (req, res) => {
       function agregarProductoAlCarrito(idCarrito) {
         const query = `
           INSERT INTO Carrito_has_Producto (idCarrito, idProducto, cantidad, Total)
-VALUES (?, ?, ?, (SELECT precioVenta FROM Producto WHERE idProducto = ?) * ?)
-ON DUPLICATE KEY UPDATE 
-    cantidad = cantidad + VALUES(cantidad),
-    Total = (SELECT precioVenta FROM Producto WHERE idProducto = ?) * (cantidad);
-
+          VALUES (?, ?, ?, (SELECT precioVenta FROM Producto WHERE idProducto = ?) * ?)
+          ON DUPLICATE KEY UPDATE 
+            cantidad = VALUES(cantidad),
+            Total = (SELECT precioVenta FROM Producto WHERE idProducto = ?) * VALUES(cantidad);
         `;
 
         connection.query(query, [idCarrito, idProducto, cantidad, idProducto, cantidad, idProducto], (err) => {
@@ -321,9 +363,165 @@ ON DUPLICATE KEY UPDATE
             res.status(500).send('Error en el servidor');
             return;
           }
-          res.send('Producto agregado al carrito');
+
+          // Ahora, recalcular el total del carrito
+          const queryTotal = `
+            SELECT SUM(Total) AS totalGeneral 
+            FROM Carrito_has_Producto 
+            WHERE idCarrito = ?
+          `;
+          connection.query(queryTotal, [idCarrito], (err, result) => {
+            if (err) {
+              console.error('Error al calcular el total del carrito:', err);
+              res.status(500).send('Error al calcular el total');
+              return;
+            }
+
+            const totalGeneral = result[0].totalGeneral || 0;
+
+            // Actualizar el total del carrito
+            const queryActualizarTotal = 'UPDATE Carrito SET Total = ? WHERE idCarrito = ?';
+            connection.query(queryActualizarTotal, [totalGeneral, idCarrito], (err) => {
+              if (err) {
+                console.error('Error al actualizar el total del carrito:', err);
+                res.status(500).send('Error al actualizar el total');
+                return;
+              }
+
+              res.send('Producto agregado al carrito');
+            });
+          });
         });
       }
+    });
+  });
+});
+
+
+app.post('/carrito/eliminar', (req, res) => {
+  const { idProducto, idPersona } = req.body;
+
+  if (!idPersona || !idProducto) {
+    console.error('Datos incompletos:', req.body);
+    res.status(400).send('Datos incompletos');
+    return;
+  }
+
+  console.log('Datos recibidos:', { idPersona, idProducto });
+
+  // Primero, obtén el idCliente usando el idPersona
+  const queryCliente = 'SELECT idCliente FROM Cliente WHERE idPersona = ?';
+
+  connection.query(queryCliente, [idPersona], (err, result) => {
+    if (err) {
+      console.error('Error al obtener idCliente:', err);
+      res.status(500).send('Error en el servidor');
+      return;
+    }
+
+    if (result.length === 0) {
+      res.status(404).send('Cliente no encontrado');
+      return;
+    }
+
+    const idCliente = result[0].idCliente;
+
+    // Ahora que tenemos el idCliente, verifica si el carrito del cliente existe
+    const queryCarrito = 'SELECT idCarrito FROM Carrito WHERE idCliente = ?';
+    
+    connection.query(queryCarrito, [idCliente], (err, result) => {
+      if (err) {
+        console.error('Error al obtener el carrito del cliente:', err);
+        res.status(500).send('Error en el servidor');
+        return;
+      }
+
+      let idCarrito = result.length > 0 ? result[0].idCarrito : null;
+
+      if (!idCarrito) {
+        res.status(404).send('Carrito no encontrado');
+        return;
+      }
+
+      // Eliminar el producto del carrito
+      const queryEliminarProducto = `
+        DELETE FROM Carrito_has_Producto 
+        WHERE idCarrito = ? AND idProducto = ?
+      `;
+
+      connection.query(queryEliminarProducto, [idCarrito, idProducto], (err) => {
+        if (err) {
+          console.error('Error al eliminar producto del carrito:', err);
+          res.status(500).send('Error en el servidor');
+          return;
+        }
+
+        // Recalcular el total del carrito
+        const queryTotal = `
+          SELECT SUM(Total) AS totalGeneral 
+          FROM Carrito_has_Producto 
+          WHERE idCarrito = ?
+        `;
+        connection.query(queryTotal, [idCarrito], (err, result) => {
+          if (err) {
+            console.error('Error al calcular el total del carrito:', err);
+            res.status(500).send('Error al calcular el total');
+            return;
+          }
+
+          const totalGeneral = result[0].totalGeneral || 0;
+
+          // Actualizar el total del carrito
+          const queryActualizarTotal = 'UPDATE Carrito SET Total = ? WHERE idCarrito = ?';
+          connection.query(queryActualizarTotal, [totalGeneral, idCarrito], (err) => {
+            if (err) {
+              console.error('Error al actualizar el total del carrito:', err);
+              res.status(500).send('Error al actualizar el total');
+              return;
+            }
+
+            res.send('Producto eliminado del carrito');
+          });
+        });
+      });
+    });
+  });
+});
+
+
+app.get('/carrito/total/:idCliente', (req, res) => {
+  const { idCliente } = req.params;
+
+  // Primero obtenemos el idCarrito relacionado con el idCliente
+  const queryCarrito = 'SELECT idCarrito FROM Carrito WHERE idCliente = ?';
+
+  connection.query(queryCarrito, [idCliente], (err, result) => {
+    if (err) {
+      console.error('Error al obtener el idCarrito:', err);
+      return res.status(500).send('Error en el servidor');
+    }
+
+    if (result.length === 0) {
+      return res.status(404).send('Carrito no encontrado');
+    }
+
+    const idCarrito = result[0].idCarrito;
+
+    // Consulta para sumar los totales de carrito_has_producto
+    const queryTotal = `
+      SELECT SUM(Total) AS TotalCarrito
+      FROM Carrito_has_Producto
+      WHERE idCarrito = ?;
+    `;
+
+    connection.query(queryTotal, [idCarrito], (err, result) => {
+      if (err) {
+        console.error('Error al calcular el total del carrito:', err);
+        return res.status(500).send('Error en el servidor');
+      }
+
+      const total = result[0].TotalCarrito || 0; // Si no hay productos, devuelve 0
+      res.json({ TotalCarrito: total });
     });
   });
 });

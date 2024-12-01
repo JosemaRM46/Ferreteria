@@ -125,26 +125,48 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Tarjetas */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-blue-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer" onClick={() => window.location.href = '/inventario'}>
-            <img src="/images/inventario.gif" alt="Inventario" className="w-25 h-25 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-center text-blue-600">Inventario</h3>
-            <p className="text-center text-gray-600">Gestiona y revisa los productos en inventario.</p>
-          </div>
+       {/* Tarjetas */}
+<div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+  {/* Tarjeta Inventario */}
+  <div className="group relative bg-blue-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer">
+    <img src="/images/inventario.gif" alt="Inventario" className="w-25 h-25 mx-auto mb-4 transform group-hover:scale-110 transition-transform duration-500" />
+    {/* Texto dentro de la tarjeta */}
+    <div className="absolute inset-0 bg-blue-600 bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+      <h3 className="text-4xl font-semibold text-white group-hover:text-blue-100 transition-colors">
+        Inventario
+      </h3>
+    </div>
+    <p className="text-2xl text-center font-semibold text-black group-hover:text-blue-100"> Inventario.</p>
+    <p className="text-center text-gray-600">Gestiona y revisa los productos en inventario.</p>
+  </div>
 
-          <div className="bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer" onClick={() => window.location.href = '/empleados'}>
-            <img src="/images/Personal.gif" alt="Personal" className="w-25 h-25 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-center text-green-600">Personal</h3>
-            <p className="text-center text-gray-600">Administra la información de los empleados.</p>
-          </div>
+  {/* Tarjeta Personal */}
+  <div className="group relative bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer">
+    <img src="/images/Personal.gif" alt="Personal" className="w-25 h-25 mx-auto mb-4 transform group-hover:scale-110 transition-transform duration-500" />
+    {/* Texto dentro de la tarjeta */}
+    <div className="absolute inset-0 bg-green-600 bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+      <h3 className="text-4xl font-semibold text-white group-hover:text-green-100 transition-colors">
+        Personal
+      </h3>
+    </div>
+    <p className="text-2xl text-center font-semibold text-black group-hover:text-blue-100"> Personal.</p>
+    <p className="text-center text-gray-600">Administra la información de los empleados.</p>
+  </div>
 
-          <div className="bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer" onClick={() => window.location.href = '/pedidos'}>
-            <img src="/images/pedido.gif" alt="Pedidos" className="w-25 h-25 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-center text-yellow-600">Pedidos</h3>
-            <p className="text-center text-gray-600">Consulta y gestiona los pedidos en curso.</p>
-          </div>
-        </div>
+  {/* Tarjeta Envios */}
+  <div className="group relative bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer">
+    <img src="/images/pedido.gif" alt="Pedidos" className="w-25 h-25 mx-auto mb-4 transform group-hover:scale-110 transition-transform duration-500" />
+    {/* Texto dentro de la tarjeta */}
+    <div className="absolute inset-0 bg-yellow-600 bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+      <h3 className="text-4xl font-semibold text-white group-hover:text-yellow-100 transition-colors">
+       Envios
+      </h3>
+    </div>
+    <p className="text-2xl text-center font-semibold text-black group-hover:text-blue-100"> Envios.</p>
+    <p className="text-center text-gray-600">Consulta y gestiona los envios en curso.</p>
+  </div>
+</div>
+
       </div>
       <Footer />
     </div>

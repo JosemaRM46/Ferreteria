@@ -16,7 +16,7 @@ export default function RegisterPage() {
     fetch("http://localhost:3001/personal")
       .then((response) => response.json())
       .then((data) => {
-        const productosConImagen = data.map((empleado) => ({
+        const productosConImagen = data.map((empleado: { fotografia: any; }) => ({
           ...empleado,
           fotografia: empleado.fotografia || '/images/noimagen.jpg', // Imagen predeterminada si no hay
         }));

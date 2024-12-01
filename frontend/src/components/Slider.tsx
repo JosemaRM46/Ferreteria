@@ -4,9 +4,14 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 const images = [
-  'https://images.pexels.com/photos/1427292/pexels-photo-1427292.jpeg?auto=compress&cs=tinysrgb&w=600',
-  'https://image.shutterstock.com/image-photo/various-tools-on-wooden-background-260nw-1032848884.jpg',
-  'https://image.shutterstock.com/image-photo/various-tools-on-wooden-background-260nw-1032848884.jpg',
+  'https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/banners1.jpg',
+  'https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/Portada+NATURAL+DECOR.png',
+  'https://ferrebaratilloimage.s3.us-east-2.amazonaws.com/Portada+ecomers+Universal.png',
+  'https://www.portalmayorista.com/images/Slide-black-week-mayorista-Noviembre2024-PortalMayorista4.jpg?1733024114481',
+  'https://www.portalmayorista.com/images/Slide-moldes-silicona-Navidad-2024-PortalMayorista.jpg?1733024115252',
+  
+
+
 ];
 
 export default function Slider() {
@@ -29,7 +34,7 @@ export default function Slider() {
   };
 
   return (
-    <div className="relative w-full h-64 overflow-hidden">
+    <div className="relative w-full h-70 overflow-hidden">
       <div className="absolute inset-0 flex items-center justify-between z-10">
         <button onClick={prevSlide} className="bg-gray-800 text-white p-2 rounded-full">
           <ArrowBackIosIcon />

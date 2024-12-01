@@ -426,7 +426,7 @@ app.get('/Ventas', (req, res) => {
 
 // Endpoint para obtener productos y su cantidad de stock
 app.get('/inventario', (req, res) => {
-  const { idsucursal } = req.query;  // Obtener el id de la sucursal desde el query string
+  const { idsucursal } = req.query;  
   if (!idsucursal) {
     return res.status(400).json({ error: 'Falta el parámetro idsucursal' });
   }
@@ -516,6 +516,43 @@ app.get('/proveedor', (req, res) => {
   connection.query('SELECT idproveedor, nombre, correo, telefono, ruta FROM proveedor', (err, results) => {
     if (err) {
       res.status(500).send(err);
+      return;
+    }
+    res.json(results);
+  });
+});
+
+/////////////////////////////////////////////////////////////////////
+//////////     P A N T A L L A  P E R S O N A L    ///////////////
+/////////////////////////////////////////////////////////////////////
+
+app.get('/personal', (req, res) => {
+  const query = `
+    Select 
+    CONCAT(p.pNombre, ' ', p.pApellido) AS nombre,
+    ins.correo AS correo,
+    t.numero,
+    c.nombre cargo,
+     DATE_FORMAT(ea.fechaInicio, '%d-%m-%Y') AS fechaInicio,
+    CASE
+        WHEN TIMESTAMPDIFF(YEAR, ea.fechaInicio, CURDATE()) = 0 THEN 
+            CONCAT(TIMESTAMPDIFF(MONTH, ea.fechaInicio, CURDATE()), ' meses')
+        ELSE 
+            CONCAT(FLOOR(TIMESTAMPDIFF(MONTH, ea.fechaInicio, CURDATE()) / 12), ' años')
+    END AS tiempoCargo,
+    e.fotografia
+    from persona p
+    inner join empleado e on e.idpersona=p.idpersona
+    inner join empleado_has_cargo ea on ea.idEmpleado=e.idEmpleado
+    inner join cargo c on c.idCargo=ea.idcargo
+    inner join telefono t on t.idPersona=p.idpersona
+    inner join iniciosesion ins on ins.idpersona=p.idpersona
+  `;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error ejecutando la consulta:", err);
+      res.status(500).json({ error: 'Error al obtener los empleados' });
       return;
     }
     res.json(results);

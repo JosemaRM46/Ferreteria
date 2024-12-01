@@ -353,8 +353,6 @@ export default function RegisterPage() {
             <div key={producto.idProducto} className="bg-white shadow-lg rounded-lg overflow-hidden">
               <img
                 src={producto.ruta}
-                alt={producto.nombre}
-                className="w-full h-64 object-cover"
               />
               <div className="p-4">
                 <h2 className="text-xl font-semibold text-gray-700">{producto.nombre}</h2>

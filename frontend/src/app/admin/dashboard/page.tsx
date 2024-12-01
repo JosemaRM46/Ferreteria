@@ -133,7 +133,7 @@ export default function AdminDashboard() {
             <p className="text-center text-gray-600">Gestiona y revisa los productos en inventario.</p>
           </div>
 
-          <div className="bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer" onClick={() => window.location.href = '/personal'}>
+          <div className="bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer" onClick={() => window.location.href = '/empleados'}>
             <img src="/images/Personal.gif" alt="Personal" className="w-25 h-25 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-center text-green-600">Personal</h3>
             <p className="text-center text-gray-600">Administra la información de los empleados.</p>

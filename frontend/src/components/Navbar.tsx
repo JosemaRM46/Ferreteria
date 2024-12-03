@@ -80,9 +80,7 @@ const Navbar = () => {
             <MenuIcon className="text-white" />
           </IconButton>
           <div className="hidden md:flex space-x-4">
-            <IconButton onClick={toggleMenu} className="hover:text-gray-400">
-              <MenuIcon className="text-white" />
-            </IconButton>
+            
           </div>
         </div>
         <div className="flex items-center justify-center w-6/12">

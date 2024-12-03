@@ -79,7 +79,6 @@ function CategoryGrid({ categories }: { categories: Category[] }) {
             <div className="p-6 absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <h2 className="text-5xl font-bold text-gray-900 text-center group-hover:text-gray-900 group-hover:text-opacity-80 transition">
                 {category.nombre}
-              <p className="text-lg text-gray-500 mt-2 text-center">ID: {category.idCategoria}</p>
               </h2>
             </div>
           </div>

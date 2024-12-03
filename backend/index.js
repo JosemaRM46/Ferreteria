@@ -841,3 +841,88 @@ function updateCarritoWithTarjeta(idPersona, idTarjeta, res) {
   });
 }
 
+
+app.get('/api/paises', (req, res) => {
+  connection.query('SELECT idPais, Nombre FROM Pais', (err, results) => {
+    if (err) {
+      console.error('Error al obtener países:', err);
+      return res.status(500).send('Error al obtener países');
+    }
+    res.json(results);
+  });
+});
+
+
+app.get('/api/departamentos/:idPais', (req, res) => {
+  const { idPais } = req.params;
+  connection.query(
+    'SELECT idDepartamento, Nombre FROM Departamento WHERE idPais = ?',
+    [idPais],
+    (err, results) => {
+      if (err) {
+        console.error('Error al obtener departamentos:', err);
+        return res.status(500).send('Error al obtener departamentos');
+      }
+      res.json(results);
+    }
+  );
+});
+
+
+app.post('/api/ubicacion', (req, res) => {
+  const { Detalles, idPais, idDepartamento, idPersona } = req.body;
+
+  if (!idPersona || !Detalles || !idPais || !idDepartamento) {
+    return res.status(400).send({ message: "Todos los campos son obligatorios" });
+  }
+
+  // Consulta para obtener el idCarrito basado en idPersona
+  const getCarritoQuery = `
+    SELECT idCarrito 
+    FROM Carrito 
+    WHERE idCliente = (
+      SELECT idCliente FROM Cliente WHERE idPersona = ?
+    );`;
+
+  connection.query(getCarritoQuery, [idPersona], (err, results) => {
+    if (err) {
+      console.error("Error al obtener idCarrito:", err);
+      return res.status(500).send({ message: "Error al obtener el carrito" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send({ message: "No se encontró un carrito asociado a este cliente." });
+    }
+
+    const idCarrito = results[0].idCarrito;
+
+    // Inserta los datos en Ubicacion_detalle
+    const insertQuery = `
+      INSERT INTO Ubicacion_detalle (Detalles, idPais, idDepartamento, idCarrito)
+      VALUES (?, ?, ?, ?);`;
+
+    connection.query(insertQuery, [Detalles, idPais, idDepartamento, idCarrito], (err, result) => {
+      if (err) {
+        console.error("Error al guardar la ubicación:", err);
+        return res.status(500).send({ message: "Error al guardar la ubicación" });
+      }
+
+      const idUbicacion = result.insertId;
+
+      // Actualizar idUbicacion en Carrito
+      const updateCarritoQuery = `
+        UPDATE Carrito 
+        SET idUbicacion = ?
+        WHERE idCarrito = ?;`;
+
+      connection.query(updateCarritoQuery, [idUbicacion, idCarrito], (err) => {
+        if (err) {
+          console.error("Error al actualizar el carrito:", err);
+          return res.status(500).send({ message: "Error al actualizar el carrito" });
+        }
+
+        res.status(201).send({ message: "Ubicación guardada y carrito actualizado con éxito." });
+      });
+    });
+  });
+});

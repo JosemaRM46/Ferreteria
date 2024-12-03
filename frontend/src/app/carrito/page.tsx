@@ -208,7 +208,7 @@ export default function CarritoPage() {
                 Seguir comprando
               </Link>
               <Link
-                href="/factura"
+                href="/tarjeta"
                 className="py-2 px-4 rounded-md bg-green-600 text-white font-medium shadow-md hover:bg-green-700 transition duration-300"
               >
                 Pagar

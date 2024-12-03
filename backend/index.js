@@ -756,3 +756,88 @@ app.get('/personal', (req, res) => {
     res.json(results);
   });
 });
+
+
+
+app.post('/api/tarjeta', (req, res) => {
+  const { numero, mes, anio, cvv, idPersona } = req.body;
+
+  // Primero, comprobamos si la persona ya tiene una tarjeta registrada
+  const checkCardQuery = 'SELECT COUNT(*) as count FROM Tarjeta WHERE idPersona = ?';
+  connection.query(checkCardQuery, [idPersona], (err, results) => {
+    if (err) {
+      console.error('Error en la consulta de verificación:', err);
+      return res.status(500).send('Error en la consulta de verificación');
+    }
+
+    const count = results[0]?.count || 0;
+
+    if (count > 0) {
+      // Si ya tiene una tarjeta, actualizamos
+      const updateQuery = 'UPDATE Tarjeta SET numero = ?, mes = ?, anio = ?, cvv = ? WHERE idPersona = ?';
+      connection.query(updateQuery, [numero, mes, anio, cvv, idPersona], (err, result) => {
+        if (err) {
+          console.error('Error al actualizar los datos:', err);
+          return res.status(500).send('Error al actualizar los datos');
+        }
+
+        // Recuperamos el idTarjeta actualizado
+        const getCardIdQuery = 'SELECT idTarjeta FROM Tarjeta WHERE idPersona = ?';
+        connection.query(getCardIdQuery, [idPersona], (err, cardResults) => {
+          if (err) {
+            console.error('Error al obtener idTarjeta:', err);
+            return res.status(500).send('Error al obtener idTarjeta');
+          }
+          const idTarjeta = cardResults[0]?.idTarjeta;
+
+          // Actualizamos la tabla Carrito con el idTarjeta
+          updateCarritoWithTarjeta(idPersona, idTarjeta, res);
+        });
+      });
+    } else {
+      // Si no tiene una tarjeta, la creamos
+      const insertQuery = 'INSERT INTO Tarjeta (numero, mes, anio, cvv, idPersona) VALUES (?, ?, ?, ?, ?)';
+      connection.query(insertQuery, [numero, mes, anio, cvv, idPersona], (err, result) => {
+        if (err) {
+          console.error('Error al guardar los datos:', err);
+          return res.status(500).send('Error al guardar los datos');
+        }
+
+        // Recuperamos el idTarjeta insertado
+        const idTarjeta = result.insertId;
+
+        // Actualizamos la tabla Carrito con el idTarjeta
+        updateCarritoWithTarjeta(idPersona, idTarjeta, res);
+      });
+    }
+  });
+});
+
+// Función para actualizar el carrito con el idTarjeta correspondiente
+function updateCarritoWithTarjeta(idPersona, idTarjeta, res) {
+  // Obtenemos el idCliente asociado a la idPersona
+  const getClientIdQuery = 'SELECT idCliente FROM Cliente WHERE idPersona = ?';
+  connection.query(getClientIdQuery, [idPersona], (err, clientResults) => {
+    if (err) {
+      console.error('Error al obtener idCliente:', err);
+      return res.status(500).send('Error al obtener idCliente');
+    }
+
+    const idCliente = clientResults[0]?.idCliente;
+    if (!idCliente) {
+      return res.status(400).send('No se encontró idCliente para esta persona');
+    }
+
+    // Actualizamos la tabla Carrito con el idTarjeta
+    const updateCarritoQuery = 'UPDATE Carrito SET idTarjeta = ? WHERE idCliente = ?';
+    connection.query(updateCarritoQuery, [idTarjeta, idCliente], (err, result) => {
+      if (err) {
+        console.error('Error al actualizar Carrito con idTarjeta:', err);
+        return res.status(500).send('Error al actualizar Carrito con idTarjeta');
+      }
+
+      res.status(200).send('Tarjeta y carrito actualizados correctamente');
+    });
+  });
+}
+

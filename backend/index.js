@@ -449,10 +449,10 @@ app.get('/inventario', (req, res) => {
     res.json(results);  // Enviar los productos con su stock
   });
 });
-
+////////////////////////////////////
 // Agregar un nuevo producto
 app.post('/producto', (req, res) => {
-  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta } = req.body;
+  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, existencia} = req.body;
 
   const query = `
     INSERT INTO producto (nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta)
@@ -467,6 +467,20 @@ app.post('/producto', (req, res) => {
     }
     res.status(201).json({ message: 'Producto agregado con éxito', idProducto: results.insertId }); // Devuelve el ID del nuevo producto
   });
+
+//   const query2 = `
+//   INSERT INTO producto (nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta)
+//   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+// `;
+// connection.query(query2, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta], (err, results) => {
+//   if (err) {
+//     console.error('Error al agregar el producto:', err);
+//     res.status(500).send('Error al agregar el producto');
+//     return;
+//   }
+//   res.status(201).json({ message: 'Producto agregado con éxito', idProducto: results.insertId }); // Devuelve el ID del nuevo producto
+// });
+
 });
 
 // Editar un producto
@@ -556,5 +570,46 @@ app.get('/personal', (req, res) => {
       return;
     }
     res.json(results);
+  });
+});
+
+/////////////////////////////////////////////////////////////////////
+//////////     P A N T A L L A  E N V I O S    ///////////////
+/////////////////////////////////////////////////////////////////////
+
+app.get('/envios', (req, res) => {
+  const query = `
+    SELECT 
+      c.idCarrito,
+      p.idProducto,
+      p.nombre,
+      cp.cantidad,
+      (cp.cantidad * p.precioVenta) AS Total
+    FROM 
+      Carrito c
+    INNER JOIN 
+      Carrito_has_Producto cp ON c.idCarrito = cp.idCarrito
+    INNER JOIN 
+      Producto p ON cp.idProducto = p.idProducto
+    WHERE 
+      c.estado = 'pagado'
+  `;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error ejecutando la consulta:", err);
+      res.status(500).json({ error: 'Error al obtener los envíos' });
+      return;
+    }
+
+    // Agrupar por carrito
+    const carritos = results.reduce((acc, row) => {
+      const { idCarrito, ...producto } = row;
+      if (!acc[idCarrito]) acc[idCarrito] = { idCarrito, productos: [] };
+      acc[idCarrito].productos.push(producto);
+      return acc;
+    }, {});
+
+    res.json(Object.values(carritos));
   });
 });

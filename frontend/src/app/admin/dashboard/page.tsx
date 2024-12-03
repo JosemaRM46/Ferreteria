@@ -182,7 +182,7 @@ export default function AdminDashboard() {
           {/* Tarjeta Envios */}
           <div 
             className="group relative bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-2xl transition cursor-pointer" 
-            onClick={() => window.location.href = '/pedidos'}
+            onClick={() => window.location.href = '/envios'}
           >
             <img 
               src="/images/pedido.gif" 

@@ -639,7 +639,7 @@ app.get('/inventario', (req, res) => {
   `;
 
   // Ejecutar la consulta
-  db.query(query, [idsucursal], (err, results) => {
+  connection.query(query, [idsucursal], (err, results) => {
     if (err) {
       console.error('Error al obtener los productos: ', err);
       return res.status(500).json({ error: 'Error en la consulta a la base de datos' });
@@ -873,6 +873,7 @@ app.post('/api/ubicacion', (req, res) => {
   const { Detalles, idPais, idDepartamento, idPersona } = req.body;
 
   if (!idPersona || !Detalles || !idPais || !idDepartamento) {
+    console.error("Campos obligatorios faltantes:", req.body);
     return res.status(400).send({ message: "Todos los campos son obligatorios" });
   }
 
@@ -891,38 +892,191 @@ app.post('/api/ubicacion', (req, res) => {
     }
 
     if (results.length === 0) {
+      console.error("No se encontró un carrito para la persona con id:", idPersona);
       return res.status(404).send({ message: "No se encontró un carrito asociado a este cliente." });
     }
 
     const idCarrito = results[0].idCarrito;
 
-    // Inserta los datos en Ubicacion_detalle
-    const insertQuery = `
-      INSERT INTO Ubicacion_detalle (Detalles, idPais, idDepartamento, idCarrito)
-      VALUES (?, ?, ?, ?);`;
+    console.log("idCarrito obtenido:", idCarrito);
 
-    connection.query(insertQuery, [Detalles, idPais, idDepartamento, idCarrito], (err, result) => {
+    // Consulta para verificar si ya existe una ubicación asociada al carrito
+    const checkUbicacionQuery = `
+      SELECT idUbicacion 
+      FROM Ubicacion_detalle 
+      WHERE idCarrito = ?;`;
+
+    connection.query(checkUbicacionQuery, [idCarrito], (err, ubicacionResults) => {
       if (err) {
-        console.error("Error al guardar la ubicación:", err);
-        return res.status(500).send({ message: "Error al guardar la ubicación" });
+        console.error("Error al verificar la ubicación existente:", err);
+        return res.status(500).send({ message: "Error al verificar la ubicación" });
       }
 
-      const idUbicacion = result.insertId;
+      if (ubicacionResults.length > 0) {
+        // Si ya existe, actualizar la ubicación existente
+        const idUbicacion = ubicacionResults[0].idUbicacion;
+        console.log("Actualizando ubicación existente con idUbicacion:", idUbicacion);
 
-      // Actualizar idUbicacion en Carrito
-      const updateCarritoQuery = `
-        UPDATE Carrito 
-        SET idUbicacion = ?
-        WHERE idCarrito = ?;`;
+        const updateUbicacionQuery = `
+          UPDATE Ubicacion_detalle 
+          SET Detalles = ?, idPais = ?, idDepartamento = ?
+          WHERE idUbicacion = ?;`;
 
-      connection.query(updateCarritoQuery, [idUbicacion, idCarrito], (err) => {
-        if (err) {
-          console.error("Error al actualizar el carrito:", err);
-          return res.status(500).send({ message: "Error al actualizar el carrito" });
-        }
+        connection.query(
+          updateUbicacionQuery,
+          [Detalles, idPais, idDepartamento, idUbicacion],
+          (err) => {
+            if (err) {
+              console.error("Error al actualizar la ubicación:", err);
+              return res.status(500).send({ message: "Error al actualizar la ubicación" });
+            }
 
-        res.status(201).send({ message: "Ubicación guardada y carrito actualizado con éxito." });
-      });
+            console.log("Ubicación actualizada con éxito.");
+            res.status(200).send({ message: "Ubicación actualizada con éxito." });
+          }
+        );
+      } else {
+        // Si no existe, insertar una nueva ubicación
+        console.log("Insertando nueva ubicación para el carrito con idCarrito:", idCarrito);
+
+        const insertUbicacionQuery = `
+          INSERT INTO Ubicacion_detalle (Detalles, idPais, idDepartamento, idCarrito)
+          VALUES (?, ?, ?, ?);`;
+
+        connection.query(
+          insertUbicacionQuery,
+          [Detalles, idPais, idDepartamento, idCarrito],
+          (err, result) => {
+            if (err) {
+              console.error("Error al guardar la nueva ubicación:", err);
+              return res.status(500).send({ message: "Error al guardar la ubicación" });
+            }
+
+            const idUbicacion = result.insertId;
+
+            console.log("Nueva ubicación creada con idUbicacion:", idUbicacion);
+
+            
+          }
+        );
+      }
     });
+  });
+});
+
+
+app.post('/api/factura', (req, res) => {
+  const { idPersona } = req.body;
+
+  if (!idPersona) {
+    return res.status(400).json({ error: "El campo 'idPersona' es obligatorio" });
+  }
+
+  const query = `
+    SELECT 
+      p.idPersona,
+      p.pNombre,
+      p.sNombre,
+      p.pApellido,
+      p.sApellido,
+      t.numero AS NumeroTarjeta,
+      ca.idCarrito,
+      ca.Total AS TotalCarrito,
+      ub.detalles AS UbicacionDetalles,
+      pa.nombre AS Pais,
+      d.nombre AS Departamento,
+      GROUP_CONCAT(
+        JSON_OBJECT(
+          'Producto', pro.nombre,
+          'Cantidad', chp.cantidad,
+          'PrecioUnidad', pro.precioVenta,
+          'TotalProducto', chp.Total
+        )
+      ) AS Productos
+    FROM Persona p
+    INNER JOIN Tarjeta t ON t.idPersona = p.idPersona
+    INNER JOIN Cliente c ON c.idPersona = p.idPersona
+    INNER JOIN Carrito ca ON ca.idCliente = c.idCliente
+    INNER JOIN Ubicacion_detalle ub ON ub.idCarrito = ca.idCarrito
+    INNER JOIN Pais pa ON pa.idPais = ub.idPais
+    INNER JOIN Departamento d ON d.idDepartamento = ub.idDepartamento
+    INNER JOIN carrito_has_producto chp ON chp.idCarrito = ca.idCarrito
+    INNER JOIN Producto pro ON pro.idProducto = chp.idProducto
+    WHERE p.idPersona = ?
+    GROUP BY p.idPersona, ca.idCarrito;
+  `;
+
+  connection.query(query, [idPersona], (err, results) => {
+    if (err) {
+      console.error("Error al ejecutar la consulta:", err);
+      return res.status(500).json({ error: "Error al obtener la factura" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "No se encontró factura para esta persona" });
+    }
+
+    // Parseamos los productos de JSON
+    const factura = results.map((row) => ({
+      ...row,
+      Productos: JSON.parse(`[${row.Productos}]`), // Convertimos los productos a un array de objetos
+    }));
+
+    res.json(factura);
+  });
+});
+
+
+// Ruta para actualizar el estado del carrito
+app.put('/api/carrito/pagar', (req, res) => {
+  const { idCarrito } = req.body;
+
+  if (!idCarrito) {
+    return res.status(400).json({ error: "El campo 'idCarrito' es obligatorio" });
+  }
+
+  const query = `UPDATE Carrito SET Estado = 'Pagado' WHERE idCarrito = ?`;
+
+  connection.query(query, [idCarrito], (err, result) => {
+    if (err) {
+      console.error("Error al actualizar el estado del carrito:", err);
+      return res.status(500).json({ error: "Error al actualizar el carrito" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "No se encontró el carrito" });
+    }
+
+    res.json({ message: "El carrito ha sido pagado exitosamente" });
+  });
+});
+
+
+app.get("/api/carrito", (req, res) => {
+  const personaId = req.query.idPersona; // Obtén el idPersona desde la consulta o el body, dependiendo de cómo lo envíes
+  
+  // Definimos la consulta SQL
+  const query = `
+    SELECT c.idCarrito 
+    FROM Carrito c
+    JOIN Cliente cl ON c.idCliente = cl.idCliente
+    WHERE cl.idPersona = ?
+  `;
+  
+  // Ejecutamos la consulta
+  connection.query(query, [personaId], (err, results) => {
+    if (err) {
+      console.error("Error al obtener el idCarrito:", err);
+      res.status(500).send("Error al obtener el idCarrito");
+      return;
+    }
+    
+    if (results.length > 0) {
+      // Si la consulta devuelve resultados, enviamos el idCarrito
+      res.json({ idCarrito: results[0].idCarrito });
+    } else {
+      // Si no se encuentra ningún carrito para el idPersona, respondemos con un error 404
+      res.status(404).send("No se encontró el carrito");
+    }
   });
 });

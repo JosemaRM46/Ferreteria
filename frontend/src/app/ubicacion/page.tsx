@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -26,6 +26,10 @@ export default function FormularioUbicacion() {
     const personaId = localStorage.getItem("idPersona");
     if (personaId) {
       setIdPersona(personaId);
+    } else {
+      console.error("No se encontró idPersona en el localStorage.");
+      alert("Error: No se encontró la información del usuario. Por favor, inicia sesión nuevamente.");
+      window.location.href = "/login"; // Redirige al login si es necesario
     }
 
     // Carga la lista de países
@@ -63,25 +67,36 @@ export default function FormularioUbicacion() {
         idPersona,
       });
   
-      if (response.status === 201) {
-        alert("Ubicación guardada y carrito actualizado con éxito.");
-        window.location.href = "/factura"; 
+      if (response.status === 200) {
+        alert(response.data.message || "Ubicación guardada y carrito actualizado con éxito.");
+  
+        // Redirigir después de un breve retraso para asegurar que todo se procese correctamente.
+        setTimeout(() => {
+          window.location.href = "/factura"; // Redirección manual
+        }, 500); // Retardo de 500 ms
       } else {
-        alert("Hubo un problema al guardar la ubicación.");
+        alert(response.data.message || "Hubo un problema al guardar la ubicación.");
       }
     } catch (error) {
       console.error("Error al guardar la ubicación:", error);
       alert("Error al guardar la ubicación. Por favor, inténtalo de nuevo.");
     }
   };
-  
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
+    <div className="bg-gray-50 p-8 max-w-4xl mx-auto rounded-lg shadow-md mt-10">
+      <h1 className="text-center text-3xl font-bold text-gray-800 mb-10">Agregar Ubicación</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="pais">País:</label>
-          <select id="pais" value={selectedPais} onChange={handlePaisChange} required>
+          <label htmlFor="pais" className="block text-gray-700 font-semibold mb-2">País:</label>
+          <select
+            id="pais"
+            value={selectedPais}
+            onChange={handlePaisChange}
+            required
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
             <option value="">Seleccione un país</option>
             {paises.map((pais) => (
               <option key={pais.idPais} value={pais.idPais}>
@@ -90,14 +105,16 @@ export default function FormularioUbicacion() {
             ))}
           </select>
         </div>
+
         <div>
-          <label htmlFor="departamento">Departamento:</label>
+          <label htmlFor="departamento" className="block text-gray-700 font-semibold mb-2">Departamento:</label>
           <select
             id="departamento"
             value={selectedDepartamento}
             onChange={(e) => setSelectedDepartamento(Number(e.target.value))}
             required
             disabled={!selectedPais}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="">Seleccione un departamento</option>
             {departamentos.map((dep) => (
@@ -107,8 +124,9 @@ export default function FormularioUbicacion() {
             ))}
           </select>
         </div>
+
         <div>
-          <label htmlFor="detalles">Detalles:</label>
+          <label htmlFor="detalles" className="block text-gray-700 font-semibold mb-2">Detalles:</label>
           <input
             type="text"
             id="detalles"
@@ -116,9 +134,16 @@ export default function FormularioUbicacion() {
             value={detalles}
             onChange={(e) => setDetalles(e.target.value)}
             required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
-        <button type="submit">Guardar Ubicación</button>
+
+        <button
+          type="submit"
+          className="w-full py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition duration-300"
+        >
+          Guardar Ubicación
+        </button>
       </form>
     </div>
   );

@@ -97,6 +97,7 @@ export default function DepartmentPage() {
               precioVenta={product.precioVenta}
               ruta={product.ruta}
               onAddToCart={agregarAlCarrito}
+              idDepartamento={Number(id)}
             />
           ))}
         </div>

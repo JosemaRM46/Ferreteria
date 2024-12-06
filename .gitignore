@@ -6,3 +6,4 @@ out
 frontend/.next
 frontend/package-lock.json
 frontend/package-lock.json
+backend/.env

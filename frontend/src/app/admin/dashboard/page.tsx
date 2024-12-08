@@ -133,6 +133,12 @@ export default function AdminDashboard() {
             <div className="flex flex-col items-center">
               <img src={empleado.imagen} className="w-24 h-24 rounded-full mb-4" />
               <p className="text-gray-600">{empleado.nombre}</p>
+              <button
+                className="bg-pink-300 text-bold px-5 py-2 rounded-md hover:bg-blue-300 mt-4 "
+                onClick={() => window.location.href = '/reconocimiento'}
+              >
+                Imprimir Reconocimiento 
+              </button>
             </div>
           </div>
         </div>

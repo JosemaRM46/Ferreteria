@@ -550,7 +550,7 @@ app.get('/EmpleadoDelMes', (req, res) => {
     INNER JOIN empleado e ON e.idEmpleado = en.idEmpleado
     INNER JOIN persona p ON p.idPersona = e.idPersona
     INNER JOIN carrito_Entrega ce ON ce.idEntrega = en.idEntrega
-    WHERE MONTH(ce.FechaEntrega) = MONTH(CURDATE())
+    WHERE MONTH(ce.FechaEntrega) = MONTH(CURDATE()) or (CURDATE() - INTERVAL 1 MONTH)
     AND ce.estado='Entregado'
     GROUP BY CONCAT(p.pNombre, ' ', p.pApellido), e.fotografia 
     ORDER BY CantidadEntregas DESC
@@ -777,41 +777,112 @@ app.get('/personal', (req, res) => {
 /////////////////////////////////////////////////////////////////////
 
 app.get('/envios', (req, res) => {
-  const query = `
+  // Primera consulta: Datos del cliente, carrito y productos
+  const query1 = `
     SELECT 
-      c.idCarrito,
-      p.idProducto,
-      p.nombre,
-      cp.cantidad,
-      (cp.cantidad * p.precioVenta) AS Total
+      ca.idCarrito,
+      CONCAT(p.pNombre, ' ', p.sNombre, ' ', p.pApellido, ' ', p.sApellido) AS NombreCompleto,
+      t.numero AS telefono,
+      CONCAT(ub.detalles, ' ', pa.nombre, ' ', d.nombre) AS UbicacionDetalles,
+      pro.nombre AS producto,
+      pro.precioVenta,
+      (pro.precioventa*chp.cantidad) AS Total,
+      chp.cantidad
     FROM 
-      Carrito c
+      Persona p
     INNER JOIN 
-      Carrito_has_Producto cp ON c.idCarrito = cp.idCarrito
+      Cliente c ON c.idPersona = p.idPersona
     INNER JOIN 
-      Producto p ON cp.idProducto = p.idProducto
+      Carrito ca ON ca.idCliente = c.idCliente
+    INNER JOIN 
+      Ubicacion_detalle ub ON ub.idCarrito = ca.idCarrito
+    INNER JOIN 
+      Pais pa ON pa.idPais = ub.idPais
+    INNER JOIN 
+      Departamento d ON d.idDepartamento = ub.idDepartamento
+    INNER JOIN 
+      carrito_has_producto chp ON chp.idCarrito = ca.idCarrito
+    INNER JOIN 
+      Producto pro ON pro.idProducto = chp.idProducto
+    INNER JOIN 
+      Telefono t ON t.idPersona = p.idPersona
+    INNER JOIN 
+    carrito_entrega ce on ce.idcarrito=ca.idcarrito
     WHERE 
-      c.estado = 'pagado'
+      ca.estado = 'Pagado'
+      
+  `;
+  //and ce.estado = 'Pendiente' 
+
+  // Segunda consulta: Total de productos y total del carrito
+  const query2 = `
+    SELECT
+      chp.idCarrito,
+      SUM(chp.cantidad) AS TotalProductos,
+      ROUND(SUM(chp.cantidad * pro.precioVenta), 2) AS TotalCarrito
+    FROM 
+      carrito_has_producto chp
+    INNER JOIN 
+      Producto pro ON pro.idProducto = chp.idProducto
+    GROUP BY 
+      chp.idCarrito
   `;
 
-  connection.query(query, (err, results) => {
-    if (err) {
-      console.error("Error ejecutando la consulta:", err);
+  // Ejecutar ambas consultas de manera simultánea
+  connection.query(query1, (err1, results1) => {
+    if (err1) {
+      console.error("Error ejecutando la primera consulta:", err1);
       res.status(500).json({ error: 'Error al obtener los envíos' });
       return;
     }
 
-    // Agrupar por carrito
-    const carritos = results.reduce((acc, row) => {
-      const { idCarrito, ...producto } = row;
-      if (!acc[idCarrito]) acc[idCarrito] = { idCarrito, productos: [] };
-      acc[idCarrito].productos.push(producto);
-      return acc;
-    }, {});
+    connection.query(query2, (err2, results2) => {
+      if (err2) {
+        console.error("Error ejecutando la segunda consulta:", err2);
+        res.status(500).json({ error: 'Error al obtener el total de productos' });
+        return;
+      }
 
-    res.json(Object.values(carritos));
+      // Agrupar los resultados de la primera consulta por carrito
+      const carritos = results1.reduce((acc, row) => {
+        const { idCarrito, NombreCompleto, telefono, UbicacionDetalles, producto, precioVenta, cantidad, Total } = row;
+
+        if (!acc[idCarrito]) {
+          acc[idCarrito] = {
+            idCarrito,
+            cliente: {
+              NombreCompleto,
+              telefono,
+              UbicacionDetalles,
+            },
+            productos: [],
+            resumen: {
+              precioVenta,
+              cantidad,
+              Total
+            },
+          };
+        }
+
+        acc[idCarrito].productos.push({ producto, cantidad, precioVenta, Total });
+        return acc;
+      }, {});
+
+      // Integrar los totales de la segunda consulta con los carritos
+      results2.forEach(row => {
+        const { idCarrito, TotalProductos, TotalCarrito } = row;
+        if (carritos[idCarrito]) {
+          carritos[idCarrito].resumen.TotalProductos = TotalProductos;
+          carritos[idCarrito].resumen.TotalCarrito = TotalCarrito;
+        }
+      });
+
+      // Devolver la respuesta con los datos completos
+      res.json(Object.values(carritos));
+    });
   });
 });
+
 
 
 app.post('/api/tarjeta', (req, res) => {
@@ -1036,18 +1107,10 @@ app.post('/api/factura', (req, res) => {
       p.sApellido,
       t.numero AS NumeroTarjeta,
       ca.idCarrito,
-      ca.Total AS TotalCarrito,
+      ROUND(chp.cantidad*pro.precioVenta) AS TotalCarrito,
       ub.detalles AS UbicacionDetalles,
       pa.nombre AS Pais,
-      d.nombre AS Departamento,
-      GROUP_CONCAT(
-        JSON_OBJECT(
-          'Producto', pro.nombre,
-          'Cantidad', chp.cantidad,
-          'PrecioUnidad', pro.precioVenta,
-          'TotalProducto', chp.Total
-        )
-      ) AS Productos
+      d.nombre AS Departamento
     FROM Persona p
     INNER JOIN Tarjeta t ON t.idPersona = p.idPersona
     INNER JOIN Cliente c ON c.idPersona = p.idPersona
@@ -1057,8 +1120,7 @@ app.post('/api/factura', (req, res) => {
     INNER JOIN Departamento d ON d.idDepartamento = ub.idDepartamento
     INNER JOIN carrito_has_producto chp ON chp.idCarrito = ca.idCarrito
     INNER JOIN Producto pro ON pro.idProducto = chp.idProducto
-    WHERE p.idPersona = ?
-    GROUP BY p.idPersona, ca.idCarrito;
+    group by ca.idcarrito
   `;
 
   connection.query(query, [idPersona], (err, results) => {

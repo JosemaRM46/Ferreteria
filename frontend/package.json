@@ -16,6 +16,8 @@
     "@types/parse-json": "^4.0.2",
     "axios": "^1.7.7",
     "chart.js": "^4.4.6",
+    "html2pdf.js": "^0.10.2",
+    "jspdf": "^2.5.2",
     "next": "latest",
     "react": "18.3.1",
     "react-chartjs-2": "^5.2.0",

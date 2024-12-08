@@ -48,15 +48,25 @@ app.get('/categoria', (req, res) => {
   });
 });
 
-app.get('/producto', (req, res) => {
-  connection.query('SELECT * FROM producto', (err, results) => {
-    if (err) {
-      res.status(500).send(err);
-      return;
-    }
-    res.json(results);
+
+  app.get('/producto', (req, res) => {
+    const query = `
+      SELECT p.*, ps.existencia AS existencia
+      FROM producto p
+      LEFT JOIN producto_has_sucursal ps ON p.idProducto = ps.idProducto
+      WHERE ps.idSucursal = 1
+    `;
+  
+    connection.query(query, (err, results) => {
+      if (err) {
+        console.error('Error al obtener los productos:', err);
+        res.status(500).send('Error al obtener los productos');
+        return;
+      }
+      res.json(results);
+    });
   });
-});
+  
 
 app.get('/productos/departamento/:idCategoria', (req, res) => {
   const { idCategoria } = req.params;
@@ -139,6 +149,9 @@ app.post('/registro', (req, res) => {
     });
   });
 });
+
+
+
 
 app.get('/producto/:idProducto', (req, res) => {
   const { idProducto } = req.params;
@@ -623,102 +636,97 @@ app.get('/Ventas', (req, res) => {
 
 // Obtener todos los productos
 
-// Endpoint para obtener productos y su cantidad de stock
-app.get('/inventario', (req, res) => {
-  const { idsucursal } = req.query;  
-  if (!idsucursal) {
-    return res.status(400).json({ error: 'Falta el parámetro idsucursal' });
-  }
-
-  // Consulta SQL para obtener los productos con su cantidad de stock
-  const query = `
-    SELECT p.*, ps.existencia AS existencias
-    FROM producto p
-    LEFT JOIN producto_has_sucursal ps ON p.idProducto = ps.idProducto
-    where p.idSucursal = 1
-    
-  `;
-
-  // Ejecutar la consulta
-  connection.query(query, [idsucursal], (err, results) => {
-    if (err) {
-      console.error('Error al obtener los productos: ', err);
-      return res.status(500).json({ error: 'Error en la consulta a la base de datos' });
-    }
-    res.json(results);  // Enviar los productos con su stock
-  });
-});
-////////////////////////////////////
-// Agregar un nuevo producto
+// Endpoint para obtener productos y su cantidad de stoc
 app.post('/producto', (req, res) => {
-  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, existencia} = req.body;
+  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, existencia } = req.body;
 
-  const query = `
+  // Primer query: Insertar en la tabla `producto`
+  const query1 = `
     INSERT INTO producto (nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  connection.query(query, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta], (err, results) => {
+  connection.query(query1, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta], (err, results1) => {
     if (err) {
       console.error('Error al agregar el producto:', err);
       res.status(500).send('Error al agregar el producto');
       return;
     }
-    res.status(201).json({ message: 'Producto agregado con éxito', idProducto: results.insertId }); // Devuelve el ID del nuevo producto
+
+    const idProducto = results1.insertId; // Capturar el ID generado
+    console.log('Producto agregado con ID:', idProducto);
+
+    // Segundo query: Insertar en la tabla relacionada con el ID del producto
+    const query2 = `
+      INSERT INTO producto_has_sucursal (idProducto, idSucursal, existencia, idEstante)
+      VALUES (?, 1, ?, 1)
+    `;
+
+    connection.query(query2, [idProducto, existencia], (err, results2) => {
+      if (err) {
+        console.error('Error al agregar al inventario:', err);
+        res.status(500).send('Error al agregar al inventario');
+        return;
+      }
+
+      res.status(201).json({ 
+        message: 'Producto e inventario agregados con éxito', 
+        idProducto: idProducto 
+      });
+    });
   });
-
-//   const query2 = `
-//   INSERT INTO producto (nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta)
-//   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-// `;
-// connection.query(query2, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta], (err, results) => {
-//   if (err) {
-//     console.error('Error al agregar el producto:', err);
-//     res.status(500).send('Error al agregar el producto');
-//     return;
-//   }
-//   res.status(201).json({ message: 'Producto agregado con éxito', idProducto: results.insertId }); // Devuelve el ID del nuevo producto
-// });
-
 });
 
-// Editar un producto
+
+// Editar un producto y su existencia
 app.put('/producto/:idProducto', (req, res) => {
   const { idProducto } = req.params;
-  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta } = req.body;
+  const { nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, existencia, idSucursal } = req.body;
 
+  //procedimiento almacenado
   const query = `
-    UPDATE producto
-    SET nombre = ?, descripcion = ?, precioVenta = ?, precioCosto = ?, idCategoria = ?, idMarca = ?, Impuesto = ?, ruta = ?
-    WHERE idProducto = ?
+    CALL actualizar_producto_y_existencia(?, ?, ?, ?, ?, ?, ?, ?, ?, ?,1)
   `;
 
-  connection.query(query, [nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, idProducto], (err, results) => {
+  // Ejecutar la consulta llamando al procedimiento almacenado
+  connection.query(query, [idProducto, nombre, descripcion, precioVenta, precioCosto, idCategoria, idMarca, Impuesto, ruta, existencia, idSucursal], (err, results) => {
     if (err) {
-      console.error('Error al editar el producto:', err);
-      res.status(500).send('Error al editar el producto');
-      return;
+      console.error('Error al ejecutar el procedimiento almacenado:', err);
+      return res.status(500).send('Error al ejecutar el procedimiento almacenado');
     }
-    res.json({ message: 'Producto actualizado con éxito' });
+
+    // Si la actualización fue exitosa
+    res.json({ message: 'Producto y existencia actualizados con éxito' });
   });
 });
 
 
-// Eliminar un producto
+
 app.delete('/producto/:idProducto', (req, res) => {
   const { idProducto } = req.params;
 
-  const query = 'DELETE FROM producto WHERE idProducto = ?';
-
-  connection.query(query, [idProducto], (err, results) => {
+  // Eliminar primero los registros en la tabla producto_has_sucursal
+  const queryEliminarRelacion = 'DELETE FROM producto_has_sucursal WHERE idProducto = ?';
+  connection.query(queryEliminarRelacion, [idProducto], (err) => {
     if (err) {
-      console.error('Error al eliminar el producto:', err);
-      res.status(500).send('Error al eliminar el producto');
+      console.error('Error al eliminar la relación de producto con sucursal:', err);
+      res.status(500).send('Error al eliminar la relación de producto con sucursal');
       return;
     }
-    res.json({ message: 'Producto eliminado con éxito' });
+
+    // Eliminar el producto en la tabla producto
+    const queryEliminarProducto = 'DELETE FROM producto WHERE idProducto = ?';
+    connection.query(queryEliminarProducto, [idProducto], (err, results) => {
+      if (err) {
+        console.error('Error al eliminar el producto:', err);
+        res.status(500).send('Error al eliminar el producto');
+        return;
+      }
+      res.json({ message: 'Producto y relación eliminados con éxito' });
+    });
   });
 });
+
 
 
 /////////////////////////////////////////////////////////////////////

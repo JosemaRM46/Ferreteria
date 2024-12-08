@@ -15,6 +15,7 @@ export default function RegisterPage() {
     idMarca: "",
     Impuesto: "",
     ruta: "",
+    existencia: "",
     idProducto: undefined,
   });
   const [paginaActual, setPaginaActual] = useState(1); // Página actual
@@ -79,7 +80,8 @@ export default function RegisterPage() {
             idMarca: "",
             Impuesto: "",
             ruta: "",
-            idProducto: undefined, // Resetear idProducto
+            existencia: "",
+            idProducto: undefined,
           });
           setMensaje("Producto agregado con éxito!");
           setTimeout(() => setMensaje(""), 3000); // Limpiar el mensaje después de 3 segundos
@@ -107,6 +109,7 @@ export default function RegisterPage() {
       idMarca: "",
       Impuesto: "",
       ruta: "",
+      existencia: "",
       idProducto: undefined, // Resetear idProducto
     });
     setShowForm(false); // Ocultar formulario
@@ -303,6 +306,18 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
+                <div className="mb-4">
+                  <label htmlFor="existencia" className="block text-gray-600">Existencia</label>
+                  <input
+                    type="text"
+                    id="existencia"
+                    name="existencia"
+                    value={nuevoProducto.existencia}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="flex justify-between mt-6">
@@ -362,6 +377,7 @@ export default function RegisterPage() {
                 <p className="text-sm text-gray-500">Categoría: {producto.idCategoria}</p>
                 <p className="text-sm text-gray-500">Marca: {producto.idMarca}</p>
                 <p className="text-sm text-gray-500">Impuesto: {producto.Impuesto}%</p>
+                <p className="text-sm text-gray-500">Existencia: {producto.existencia}</p>
               </div>
               <div className="flex justify-between p-4 border-t">
                 <button

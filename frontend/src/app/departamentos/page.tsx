@@ -31,7 +31,7 @@ export default function DepartmentsPage() {
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Categorías</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
           {categories.map((category) => (
-            <Link key={category.idCategoria} href={`/departamentos/l{category.idCategoria}`} passHref>
+            <Link key={category.idCategoria} href={`/departamentos/${category.idCategoria}`} passHref>
               <div style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', cursor: 'pointer' }}>
                 <h2>{category.nombre}</h2>
               </div>

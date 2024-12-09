@@ -40,7 +40,7 @@ export default function LoginPage() {
 
   // Función para redirigir a la página de registro
   const handleRegisterRedirect = () => {
-    window.location.href = '/registro'; 
+    window.location.href = '/Registro'; 
   };
 
   return (

@@ -162,7 +162,7 @@ export default function CarritoPage() {
                 <div className="flex-1 mr-4">
                   <h2 className="text-lg font-medium text-gray-900">{producto.nombre}</h2>
                 </div>
-                <p className="text-gray-600 mr-4">Precio: ${producto.precioVenta.toFixed(2)}</p>
+                <p className="text-gray-600 mr-4">Precio: L{producto.precioVenta.toFixed(2)}</p>
                 <div className="flex items-center gap-2 mr-4">
                   <label htmlFor={`cantidad-${producto.idProducto}`} className="text-gray-600">
                     Cantidad:
@@ -177,7 +177,7 @@ export default function CarritoPage() {
                   />
                 </div>
                 <p className="text-gray-600 mr-4">
-                  Subtotal: ${(producto.cantidad * producto.precioVenta).toFixed(2)}
+                  Subtotal: L{(producto.cantidad * producto.precioVenta).toFixed(2)}
                 </p>
                 <div className="flex justify-center w-full sm:w-auto gap-4 mt-4 sm:mt-0">
                   <button
@@ -197,7 +197,7 @@ export default function CarritoPage() {
             ))}
             {/* Mostrar el total general */}
             <div className="mt-8 text-right text-xl font-semibold text-gray-800">
-              Total General: ${calcularTotalGeneral().toFixed(2)}
+              Total General: L{calcularTotalGeneral().toFixed(2)}
             </div>
             {/* Botón Pagar */}
             <div className="mt-4 flex justify-between items-center">

@@ -1115,10 +1115,18 @@ app.post('/api/factura', (req, res) => {
       p.sApellido,
       t.numero AS NumeroTarjeta,
       ca.idCarrito,
-      ROUND(chp.cantidad*pro.precioVenta) AS TotalCarrito,
+      ca.Total AS TotalCarrito,
       ub.detalles AS UbicacionDetalles,
       pa.nombre AS Pais,
-      d.nombre AS Departamento
+      d.nombre AS Departamento,
+      GROUP_CONCAT(
+        JSON_OBJECT(
+          'Producto', pro.nombre,
+          'Cantidad', chp.cantidad,
+          'PrecioUnidad', pro.precioVenta,
+          'TotalProducto', chp.Total
+        )
+      ) AS Productos
     FROM Persona p
     INNER JOIN Tarjeta t ON t.idPersona = p.idPersona
     INNER JOIN Cliente c ON c.idPersona = p.idPersona
@@ -1128,7 +1136,8 @@ app.post('/api/factura', (req, res) => {
     INNER JOIN Departamento d ON d.idDepartamento = ub.idDepartamento
     INNER JOIN carrito_has_producto chp ON chp.idCarrito = ca.idCarrito
     INNER JOIN Producto pro ON pro.idProducto = chp.idProducto
-    group by ca.idcarrito
+    WHERE p.idPersona = ?
+    GROUP BY p.idPersona, ca.idCarrito;
   `;
 
   connection.query(query, [idPersona], (err, results) => {
